@@ -1,4 +1,5 @@
-export async function parseSite(addonSlug) {
+export default async (req, res) => {
+    const addonSlug = 'raiderio';
     let browser;
     try {
         try {
@@ -6,7 +7,7 @@ export async function parseSite(addonSlug) {
         }
         catch (e) {
             console.log(e);
-            return createError('Puppeteer exception occurreed while launching browser.');
+            return createError(res, 'Puppeteer exception occurreed while launching browser.');
         }
         let page;
         try {
@@ -16,7 +17,7 @@ export async function parseSite(addonSlug) {
         }
         catch (e) {
             console.log(e);
-            return createError(e, 'Puppeteer exception occurreed while getting page.');
+            return createError(res, 'Puppeteer exception occurreed while getting page.');
         }
         const url = `http://www.curseforge.com/wow/addons/${addonSlug}`;
         try {
@@ -24,32 +25,32 @@ export async function parseSite(addonSlug) {
             const status = response.status();
             if (status !== 200) {
                 if (status === 404) {
-                    return createError('It seems like the addon page does not exist (this usually happens when the given addon param is not a valid addon slug).');
+                    return createError(res, 'It seems like the addon page does not exist (this usually happens when the given addon param is not a valid addon slug).');
                 }
-                return createError('Puppeteer reponse error occurred while going to page, but the response status code was not HTTP 404 (which is rather unexpected).');
+                return createError(res, 'Puppeteer reponse error occurred while going to page, but the response status code was not HTTP 404 (which is rather unexpected).');
             }
         }
         catch (e) {
             console.log(e);
-            return createError('Puppeteer exception occurreed while going to page.');
+            return createError(res, 'Puppeteer exception occurreed while going to page.');
         }
         let json;
         try {
             const element = await page.$('script#__NEXT_DATA__');
             if (!element) {
-                return createError('Could not found JSON script element in page.')
+                return createError(res, 'Could not found JSON script element in page.')
             }
             const text = await page.evaluate(el => el.textContent, element);
             if (!text) {
-                return createError('Found JSON script element in page, but the element was empty.');
+                return createError(res, 'Found JSON script element in page, but the element was empty.');
             }
             json = text;
         }
         catch (e) {
             console.log(e);
-            return createError('Puppeteer exception occurreed while evaluating page.');
+            return createError(res, 'Puppeteer exception occurreed while evaluating page.');
         }
-        return createSuccess(json);
+        return createSuccess(res, json);
     }
     finally {
         if (browser) {
@@ -58,26 +59,22 @@ export async function parseSite(addonSlug) {
     }
 }
 
-/**
- * @param {string} error
- * @returns {object}
- */
-export function createError(error) {
-    return {
+function createError(res, error) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", `application/json`);
+    res.end(JSON.stringify({
         success: false,
         result: null,
         error
-    };
+    }));
 }
 
-/**
- * @param {any} result
- * @returns {object}
- */
-export function createSuccess(result) {
-    return {
+function createSuccess(res, result) {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", `application/json`);
+    res.end(JSON.stringify({
         success: true,
         result,
         error: ''
-    };
+    }));
 }
