@@ -16,5 +16,6 @@
   "bugs": {
     "url": "https://github.com/choraria/pptr-io/issues"
   },
-  "homepage": "https://github.com/choraria/pptr-io#readme"
+  "homepage": "https://github.com/choraria/pptr-io#readme",
+  "type": "module"
 }
